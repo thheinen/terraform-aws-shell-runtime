@@ -3,3 +3,9 @@ variable "initialization" {
   default     = ""
   type        = string
 }
+
+variable "opt_files" {
+  description = "Files and contents to add (relative to /opt)"
+  default     = {}
+  type        = map(string)
+}
