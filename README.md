@@ -92,3 +92,25 @@ Example output:
   }
 }
 ```
+
+## Custom Layer Initialization
+
+Sometimes you want to add files to your custom runtime. While you cannot use package installers like `rpm` or `yum`, you can copy files and unpacked RPM packages to the runtime.
+
+This example using the `initialization` input will download a Amazon Linux 2 RPM and move its contents into the runtime. The working directory for this is automatically set to the root of the custom runtime (`/opt` when deployed)
+
+```hcl
+module "shell_runtime" {
+  source  = "tecracer-theinen/terraform-aws-shell-runtime"
+  version = "0.1.0"
+
+  initialization = <<SCRIPT
+    wget --quiet https://s3.amazonaws.com/cloudhsmv2-software/CloudHsmClient/EL7/cloudhsm-cli-latest.el7.x86_64.rpm
+    rpm2cpio cloudhsm-cli-latest.el7.x86_64.rpm | cpio -idmv
+    mv ./opt/cloudhsm .
+    rmdir opt
+  SCRIPT
+}
+```
+
+As these actions get executed locally, you will need the used tools installed (here: `rpm2cpio` and `cpio`)
