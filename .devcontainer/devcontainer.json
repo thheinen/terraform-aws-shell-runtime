@@ -1,0 +1,58 @@
+{
+  "name": "Terraform",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/common-utils:1": {
+      "installZsh": false,
+      "installOhMyZsh": false
+    },
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.19"
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "1.4.6",
+      "tflint": "0.46.1"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.renderFinalNewline": true,
+        "editor.renderWhitespace": "all",
+        "editor.trimAutoWhitespace": true,
+        "files.exclude": {
+          ".terraform": true,
+          ".terraform.lock.hcl": true,
+          "terraform.tfstate.backup": true
+        }
+      },
+      "extensions": [
+        "editorconfig.editorconfig",
+        "hashicorp.terraform",
+        "mkhl.direnv",
+        "VisualStudioExptTeam.vscodeintellicode"
+      ]
+    }
+  },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.aws,target=/home/vscode/.aws,readonly,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,readonly,type=bind",
+    "target=/home/vscode/.aws/cli/cache,type=tmpfs,tmpfs-mode=1777"
+  ],
+
+  "remoteUser": "vscode",
+  "remoteEnv": {
+    "PATH": "/home/vscode/bin:/home/vscode/.local/bin:${containerEnv:PATH}",
+
+    "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
+    "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
+    "AWS_REGION": "${localEnv:AWS_REGION}",
+    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}"
+  },
+  "postAttachCommand": "direnv allow ${containerWorkspaceFolder}; (command -v tfswitch && tfswitch) >/dev/null; terraform init; tflint --init"
+}

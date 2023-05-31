@@ -1,0 +1,11 @@
+.terraform
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+terraform.tfstate.*.backup
+terraform.tfstate.backup
+terraform.tfstate
+terraform.tfstate.d/
+*workspace
+*.swp
+builds/
+src/custom_runtime/bin/jq

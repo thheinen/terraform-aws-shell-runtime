@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# From https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html
+cd $LAMBDA_TASK_ROOT
+source $LAMBDA_TASK_ROOT/"$(echo $_HANDLER | cut -d. -f1).sh"
+while true
+do
+  HEADERS="$(mktemp)"
+  EVENT_DATA=$(curl -sS -LD "$HEADERS" -X GET "http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/next")
+  REQUEST_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" | tr -d '[:space:]' | cut -d: -f2)
+
+  # Convert event data into environment variables
+  eval $(jq -r 'to_entries[] | .key + "=\"" + (.value|tostring) + "\""' <<< "$EVENT_DATA")
+
+  # Execute handler and capture output
+  STDOUT_RAW=$($(echo "$_HANDLER" | cut -d. -f2))
+  EXIT=$?
+
+  # Return processing
+  if [ -n "$JSON_RETURN" ]; then
+    STDOUT=$STDOUT_RAW
+  else
+    STDOUT="$(jq -R -s . <<< \"$STDOUT_RAW\")"
+  fi
+
+  # Return JSON
+  read -r -d '' RESPONSE <<JSON
+  {
+    "exit_code": "$EXIT",
+    "stdout": $STDOUT
+  }
+JSON
+
+  jq . >/dev/null 2>&1 <<<$RESPONSE
+  if [ $? -ne 0 ]; then
+    echo "Response is not valid JSON. Check JSON_RETURN/JSON_QUOTING variables"
+    return
+  fi
+
+  curl -X POST "http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/$REQUEST_ID/response" -d "$RESPONSE" -s
+done
